@@ -23,7 +23,7 @@ func ParseRange(s string) (Range, error) {
 		return LessThanOrEqualTo(v), nil
 	}
 	switch s[0] {
-	case '=':
+	case '=', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		return EqualTo(v), nil
 	case '>':
 		return GreaterThan(v), nil
@@ -86,12 +86,12 @@ func (r Range) SatisfiedBy(v Version) bool {
 		}
 	}
 	if r.MinEqual != nil {
-		if !v.Equals(*r.MinEqual) || !r.MinEqual.Less(v) {
+		if !v.Equals(*r.MinEqual) && !r.MinEqual.Less(v) {
 			return false
 		}
 	}
 	if r.MaxEqual != nil {
-		if !v.Equals(*r.MaxEqual) || !v.Less(*r.MaxEqual) {
+		if !v.Equals(*r.MaxEqual) && !v.Less(*r.MaxEqual) {
 			return false
 		}
 	}
@@ -99,6 +99,20 @@ func (r Range) SatisfiedBy(v Version) bool {
 }
 
 func (r Range) String() string {
+	// Special case for exact equality range
+	if r.MinEqual != nil && r.MaxEqual != nil && r.MaxEqual.Equals(*r.MinEqual) {
+		return r.MinEqual.String()
+	}
+	// Special case for tilde and caret ranges
+	if r.MinEqual != nil && r.Max != nil {
+		if r.Max.Equals(r.MinEqual.IncrementMajor()) {
+			return "^" + r.MinEqual.String()
+		}
+		if r.Max.Equals(r.MinEqual.IncrementMinor()) {
+			return "~" + r.MinEqual.String()
+		}
+	}
+	// All other cases
 	out := ""
 	if r.Min != nil {
 		out = ">" + r.Min.String()
@@ -106,19 +120,22 @@ func (r Range) String() string {
 		out = ">=" + r.MinEqual.String()
 	}
 	if r.Max != nil {
-		out += " <" + r.Max.String()
-	} else if r.MaxEqual != nil {
-		out += " <=" + r.MaxEqual.String()
-	}
-	if r.MinEqual != nil && r.MaxEqual != nil && r.MaxEqual.Equals(*r.MinEqual) {
-		out = r.MinEqual.String()
-	}
-	if r.MinEqual != nil && r.Max != nil {
-		if r.Max.Equals(r.MinEqual.IncrementMajor()) {
-			out = "^" + r.MinEqual.String()
-		} else if r.Max.Equals(r.MinEqual.IncrementMinor()) {
-			out = "~" + r.MinEqual.String()
+		if out != "" {
+			out += " "
 		}
+		out += "<" + r.Max.String()
+	} else if r.MaxEqual != nil {
+		if out != "" {
+			out += " "
+		}
+		out += "<=" + r.MaxEqual.String()
 	}
 	return out
+}
+
+func (r Range) Equals(other Range) bool {
+	return r.Min.ValueEquals(other.Min) &&
+		r.Max.ValueEquals(other.Max) &&
+		r.MinEqual.ValueEquals(other.MinEqual) &&
+		r.MaxEqual.ValueEquals(other.MaxEqual)
 }

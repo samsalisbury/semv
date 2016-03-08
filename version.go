@@ -202,8 +202,21 @@ func (v Version) PreComponents() []string {
 	return strings.Split(v.Pre, ".")
 }
 
-func (v Version) Equals(to Version) bool {
-	return !v.Less(to) && !to.Less(v)
+func (v Version) Equals(other Version) bool {
+	return !v.Less(other) && !other.Less(v)
+}
+
+// ValueEquals works on Version pointers, and checks that their values
+// are equal. Also returns true if both are nil, and obviously false if
+// one is nil and ther other one isn't.
+func (v *Version) ValueEquals(other *Version) bool {
+	if v == nil && other == nil {
+		return true
+	}
+	if v == nil || other == nil {
+		return false
+	}
+	return (*v).Equals(*other)
 }
 
 func (v Version) Satisfies(r Range) bool {
