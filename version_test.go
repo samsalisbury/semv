@@ -71,12 +71,15 @@ func TestParseExactSemver2_0_0(t *testing.T) {
 }
 
 var validParseAnyMap = map[string]string{
-	"hellow world 1":         "1",
-	"hellow world 1 1.2.3":   "1",
-	"hi 1.2 world 9":         "1.2",
-	"no 1-beta+meta":         "1-beta+meta",
-	"yes 1.2.3-beta+meta!!!": "1.2.3-beta+meta",
-	"yes 1.2+meta!!!":        "1.2+meta",
+	"go version go1.6 darwin/amd64":   "1.6",
+	"go version go1.5.3 darwin/amd64": "1.5.3",
+	"git version 2.6.1":               "2.6.1",
+	"hello world 1":                   "1",
+	"hello world 1 1.2.3":             "1",
+	"hi 1.2 world 9":                  "1.2",
+	"no 1-beta+meta":                  "1-beta+meta",
+	"yes 1.2.3-beta+meta!!!":          "1.2.3-beta+meta",
+	"yes 1.2+meta!!!":                 "1.2+meta",
 }
 
 func TestParseAny(t *testing.T) {
