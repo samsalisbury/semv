@@ -10,19 +10,82 @@ If you really care that only exact semver v2.0.0 versions are used, you can use 
 
 [the semver v2.0.0 spec]: http://semver.org/spec/v2.0.0.html
 
-### Parsing
 
-Parsing using `Parse()` is permissive by default. All of the following will parse into a Version instance:
+## Example
+
+```go
+package main
+import (
+	"fmt"
+	"os"
+
+	"github.com/samsalisbury/semv"
+)
+func main() {
+	r, err := semv.ParseRange("^3.0.1")	
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	v1, err := semv.Parse("1.0.0")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	if !r.SatisfiedBy(v1) {
+		fmt.Printf("%q is not satisfied by %q", r, v)
+	} else {
+		fmt.Printf("%q is satisfied by %q", r, v)
+	}
+}
+// output: "^3.0.1" is not satisfied by "1.0.0"
+```
+
+Note that here we are using hard-coded versions, so using the full `ParseRange` and `Parse` functions is not necessary. Instead, the above would be neater written using the `MustParse` variations, which panic instead of returning an error.
+
+```go
+package main
+import (
+	"fmt"
+
+	"github.com/samsalisbury/semv"
+)
+func main() {
+	r := semv.MustParseRange("^3.0.1")	
+	v1 := semv.MustParse("1.0.0")
+	if !r.SatisfiedBy(v1) {
+		fmt.Printf("%q is not satisfied by %q", r, v)
+	} else {
+		fmt.Printf("%q is satisfied by %q", r, v)
+	}
+}
+// output: "^3.0.1" is not satisfied by "1.0.0"
+
+```
+
+### Version Parsing
+
+Version string parsing using `Parse()` is permissive by default. All of the following will parse into a Version instance:
 
 - `"1"` parses as `{Major: 1, Minor: 0, Patch: 0, Pre: "", Meta: ""}`
 - `"1.2"` parses as `{Major: 1, Minor: 2, Patch: 0, Pre: "", Meta: ""}`
 - `"1.2.3"` parses as `{Major: 1, Minor: 2, Patch: 3, Pre: "", Meta: ""}`
 - `"1-beta"` parses as `{Major: 1, Minor: 0, Patch: 0, Pre: "beta", Meta: ""}`
 - `"1.2+abc"` parses as `{Major: 1, Minor: 2, Patch: 0, Pre: "", Meta: "abc"}`
+- `"1.2-beta+abc"` parses as `{Major: 1, Minor: 2, Patch: 0, Pre: "beta", Meta: "abc"}`
 
-### String()
+### Range Parsing
 
-Simply calling `.String()` on a version created using one of the `New(Version|MMP)` funcs will print the full version string, ommitting the optional prerelease and/or metadata sections depending on if they contain any data.
+Range parsing  using `ParseRange` and `MustParseRange` allows common range specifiers like `>`, `>=`, `<`, `<=`, as well as modern range shorcuts as used in npm and other tools: `^` and `~`.
+
+Currently, only single-version ranges are supported, so the only way to parse a range with both an upper and a lower limit is by using the `^` and `~` characters.
+
+- `^1.2.3 == >=1.2.3 and <2.0.0`
+- `~1.2.3 == >=1.2.3 and <1.3.0`
+
+### Version.String()
+
+Simply calling `.String()` on a version created using one of the `New(Version|MajorMinorPatch)` funcs will print the full version string, ommitting the optional prerelease and/or metadata sections depending on if they contain any data.
 
 If a version is created by parsing a string, its original format is recorded with the version. In this case, calling `.String()` will print the version it its original format. E.g.:
 
@@ -38,7 +101,7 @@ This feature is useful when dealing with partial versions, as used by many popul
 [Go]: https://golang.org
 [NPM]: https://www.npmjs.com
 
-### Format()
+### Version.Format()
 
 If you want to print your version in a specific format, you can use `.Format()` with a format string, e.g.:
 
