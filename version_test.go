@@ -61,7 +61,7 @@ var parseExactVersions = map[string]Version{
 
 func TestParseExactSemver2_0_0(t *testing.T) {
 	for inputString, expectedVersion := range parseExactVersions {
-		actual, err := ParseExactSemver2_0_0(inputString)
+		actual, err := ParseExactSemver2(inputString)
 		if err != nil {
 			t.Error(err)
 		}
@@ -132,7 +132,7 @@ var invalidExactSemver2_0_0Versions = map[string]string{
 
 func TestParseExactSemver2_0_0Error(t *testing.T) {
 	for input, expectedError := range invalidExactSemver2_0_0Versions {
-		_, err := ParseExactSemver2_0_0(input)
+		_, err := ParseExactSemver2(input)
 		if err == nil {
 			t.Errorf("successfully parsed invalid semver 2.0.0 string %q as version", input)
 		}
@@ -145,14 +145,14 @@ func TestParseExactSemver2_0_0Error(t *testing.T) {
 // orderedVersions uses the specific example from §11 of the semver spec at
 // http://semver.org/spec/v2.0.0.html
 var orderedVersions = []Version{
-	MustParseExactSemver2_0_0("1.0.0-alpha"),
-	MustParseExactSemver2_0_0("1.0.0-alpha.1"),
-	MustParseExactSemver2_0_0("1.0.0-alpha.beta"),
-	MustParseExactSemver2_0_0("1.0.0-beta"),
-	MustParseExactSemver2_0_0("1.0.0-beta.2"),
-	MustParseExactSemver2_0_0("1.0.0-beta.11"),
-	MustParseExactSemver2_0_0("1.0.0-rc.1"),
-	MustParseExactSemver2_0_0("1.0.0"),
+	MustParseExactSemver2("1.0.0-alpha"),
+	MustParseExactSemver2("1.0.0-alpha.1"),
+	MustParseExactSemver2("1.0.0-alpha.beta"),
+	MustParseExactSemver2("1.0.0-beta"),
+	MustParseExactSemver2("1.0.0-beta.2"),
+	MustParseExactSemver2("1.0.0-beta.11"),
+	MustParseExactSemver2("1.0.0-rc.1"),
+	MustParseExactSemver2("1.0.0"),
 }
 
 func TestLess(t *testing.T) {
@@ -175,11 +175,11 @@ func TestLess2(t *testing.T) {
 }
 
 var equalVersions = []Version{
-	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+abc"),
-	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+123"),
-	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+gsfdnjfdhisg9efwd897ywrfwerf"),
-	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+abc.def.ghy.123"),
-	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+123.456.789.abc"),
+	MustParseExactSemver2("1.0.0-alpha.1.4-beta.2+abc"),
+	MustParseExactSemver2("1.0.0-alpha.1.4-beta.2+123"),
+	MustParseExactSemver2("1.0.0-alpha.1.4-beta.2+gsfdnjfdhisg9efwd897ywrfwerf"),
+	MustParseExactSemver2("1.0.0-alpha.1.4-beta.2+abc.def.ghy.123"),
+	MustParseExactSemver2("1.0.0-alpha.1.4-beta.2+123.456.789.abc"),
 }
 
 func TestEquals(t *testing.T) {

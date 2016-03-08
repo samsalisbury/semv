@@ -41,7 +41,7 @@ func MustParse(s string) Version {
 
 // ParseExactSemver2_0_0 returns an error, and an incomplete Version if the
 // string passed in does not conform exactly to semver 2.0.0
-func ParseExactSemver2_0_0(s string) (Version, error) {
+func ParseExactSemver2(s string) (Version, error) {
 	v, errs := parse(s)
 	return v, firstErr(errs...)
 }
@@ -49,8 +49,8 @@ func ParseExactSemver2_0_0(s string) (Version, error) {
 // MustParseExactSemver2_0_0 is like ParseExactSemver2_0_0, excapt that
 // it panics on errors. This is useful in when initialising version in
 // the global scope.
-func MustParseExactSemver2_0_0(s string) Version {
-	v, err := ParseExactSemver2_0_0(s)
+func MustParseExactSemver2(s string) Version {
+	v, err := ParseExactSemver2(s)
 	if err != nil {
 		panic(err)
 	}
