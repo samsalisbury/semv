@@ -53,7 +53,7 @@ func NewMajorMinorPatch(major, minor, patch int) Version {
 }
 
 func (err VersionIncomplete) Error() string {
-	return fmt.Sprintf("version incomplete: missing %s", err.MissingPart)
+	return fmt.Sprintf("version incomplete: missing %s component", err.MissingPart)
 }
 
 func (err UnexpectedCharacter) Error() string {
@@ -61,11 +61,11 @@ func (err UnexpectedCharacter) Error() string {
 }
 
 func (err ZeroLengthNumeric) Error() string {
-	return fmt.Sprintf("unexpected zero-length %s", err.ZeroLengthPart)
+	return fmt.Sprintf("unexpected zero-length %s component", err.ZeroLengthPart)
 }
 
 func (err PrecedingZero) Error() string {
-	return fmt.Sprintf("unexpected preceding zero on %s: %q",
+	return fmt.Sprintf("unexpected preceding zero in %s component: %q",
 		err.PrecedingZeroPart, err.InputString)
 }
 
@@ -73,20 +73,29 @@ func (err PrecedingZero) Error() string {
 // which will not error is a single digit, which will be interpreted as a major
 // version, e.g. Parse("1").Format("M.m.p") == "1.0.0".
 func Parse(s string) (Version, error) {
-	v, err := parse(s)
-	if err == nil {
-		return v, nil
+	v, errs := parse(s)
+	// Skip nil, PrecedingZero, and VersionIncomplete errors in this
+	// permissive parse func.
+	for _, err := range errs {
+		if err == nil {
+			continue
+		}
+		if _, ok := err.(PrecedingZero); ok {
+			continue
+		}
+		if _, ok := err.(VersionIncomplete); ok {
+			continue
+		}
+		return v, err
 	}
-	if _, ok := err.(VersionIncomplete); ok {
-		return v, nil
-	}
-	return v, err
+	return v, nil
 }
 
 // ParseExactSemver2_0_0 returns an error, and an incomplete Version if the
 // string passed in does not conform exactly to semver 2.0.0
 func ParseExactSemver2_0_0(s string) (Version, error) {
-	return parse(s)
+	v, errs := parse(s)
+	return v, firstErr(errs...)
 }
 
 // ParseAny tries to parse any version found in a string. It starts
@@ -126,7 +135,7 @@ const (
 	Semver_2_0_0              = Complete
 )
 
-func parse(s string) (Version, error) {
+func parse(s string) (Version, []error) {
 	var parsedMinor, parsedPatch, parsedPre, parsedMeta bool
 	var (
 		major = &bytes.Buffer{}
@@ -146,36 +155,37 @@ func parse(s string) (Version, error) {
 	var i int
 	var c rune
 	// finalise takes the current buffers and tries to return a partial version
-	finalise := func(knownErrors ...error) (Version, error) {
+	finalise := func(knownErrors ...error) (Version, []error) {
 		var err error
 		v := Version{}
 		v.DefaultFormat = Major
 		majorString := major.String()
-		if v.Major, err = strconv.Atoi(majorString); err != nil {
-			return v, firstErr(append(knownErrors, err)...)
-		}
 		if err := validateMMPFormat(majorString, "major"); err != nil {
 			knownErrors = append(knownErrors, err)
+		}
+		if v.Major, err = strconv.Atoi(majorString); err != nil {
+			return v, append(knownErrors, err)
 		}
 		if parsedMinor {
 			v.DefaultFormat = MajorMinor
 			minorString := minor.String()
-			if v.Minor, err = strconv.Atoi(minorString); err != nil {
-				return v, firstErr(append(knownErrors, err)...)
-			}
 			if err := validateMMPFormat(minorString, "minor"); err != nil {
 				knownErrors = append(knownErrors, err)
+			}
+			if v.Minor, err = strconv.Atoi(minorString); err != nil {
+				return v, append(knownErrors, err)
 			}
 		}
 		if parsedPatch {
 			v.DefaultFormat = MajorMinorPatch
 			patchString := patch.String()
-			if v.Patch, err = strconv.Atoi(patchString); err != nil {
-				return v, firstErr(append(knownErrors, err)...)
-			}
 			if err := validateMMPFormat(patchString, "patch"); err != nil {
 				knownErrors = append(knownErrors, err)
 			}
+			if v.Patch, err = strconv.Atoi(patchString); err != nil {
+				return v, append(knownErrors, err)
+			}
+
 		}
 		if parsedPre {
 			v.DefaultFormat = v.DefaultFormat + "-?"
@@ -185,7 +195,7 @@ func parse(s string) (Version, error) {
 		}
 		v.Pre = pre.String()
 		v.Meta = meta.String()
-		return v, firstErr(append([]error{v.Validate()}, knownErrors...)...)
+		return v, knownErrors
 	}
 	changeMode := func() (bool, error) {
 		if (m == modePre || m == modeMeta) && c == '-' {

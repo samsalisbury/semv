@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-// reversibleVersions are versions that when parsed, and
+// reversibleParseVersions are versions that when parsed, and
 // String() is called on the resulting version, the original
 // input string is returned.
-var reversibleVersions = map[string]Version{
+var reversibleParseVersions = map[string]Version{
 	"1":                          {1, 0, 0, "", "", Major},
 	"1.2":                        {1, 2, 0, "", "", MajorMinor},
 	"1.2.3":                      {1, 2, 3, "", "", MajorMinorPatch},
@@ -23,7 +23,7 @@ var reversibleVersions = map[string]Version{
 }
 
 func TestString(t *testing.T) {
-	for expectedString, inputVersion := range reversibleVersions {
+	for expectedString, inputVersion := range reversibleParseVersions {
 		if s := inputVersion.String(); s != expectedString {
 			t.Errorf("Got %+v.String() == %+v; expected %q", inputVersion, s, expectedString)
 		}
@@ -31,8 +31,36 @@ func TestString(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	for inputString, expectedVersion := range reversibleVersions {
+	for inputString, expectedVersion := range reversibleParseVersions {
 		actual, err := Parse(inputString)
+		if err != nil {
+			t.Error(err)
+		}
+		if actual != expectedVersion {
+			t.Errorf("Got Parse(%q) == % +v; expected % +v", inputString, actual, expectedVersion)
+		}
+	}
+}
+
+// reversibleParseExactVersions are versions that successfully parse with
+// ParseExactSemver2_0_0, and when
+// String() is called on the resulting version, the original
+// input string is returned.
+var parseExactVersions = map[string]Version{
+	"1.2.3":                      {1, 2, 3, "", "", MajorMinorPatch},
+	"1.2.3-beta.1":               {1, 2, 3, "beta.1", "", MMPPre},
+	"1.2.3-beta.1+some.metadata": {1, 2, 3, "beta.1", "some.metadata", Complete},
+	"0.0.0":                                              {0, 0, 0, "", "", MajorMinorPatch},
+	"0.0.100-beta.1":                                     {0, 0, 100, "beta.1", "", MMPPre},
+	"0.100.100-beta.1+some.metadata":                     {0, 100, 100, "beta.1", "some.metadata", Complete},
+	"100.100.100-beta.1+some.metadata":                   {100, 100, 100, "beta.1", "some.metadata", Complete},
+	"100.100.100-beta-dash-21+some.metadata":             {100, 100, 100, "beta-dash-21", "some.metadata", Complete},
+	"100.100.100-beta-dash-21+some-dashing--metadata.45": {100, 100, 100, "beta-dash-21", "some-dashing--metadata.45", Complete},
+}
+
+func TestParseExactSemver2_0_0(t *testing.T) {
+	for inputString, expectedVersion := range parseExactVersions {
+		actual, err := ParseExactSemver2_0_0(inputString)
 		if err != nil {
 			t.Error(err)
 		}
@@ -71,12 +99,38 @@ var invalidVersions = map[string]string{
 	"1.2.x": "unexpected character 'x' at position 4",
 }
 
-func TestParseError(t *testing.T) {
+func TestParseErrors(t *testing.T) {
 	for inputString, expectedError := range invalidVersions {
 		_, err := Parse(inputString)
 		if err == nil {
 			t.Errorf("successfully parsed invalid string %q as version", inputString)
 			continue
+		}
+		if !strings.Contains(err.Error(), expectedError) {
+			t.Errorf("got error message %q; expected %q", err.Error(), expectedError)
+		}
+	}
+}
+
+var invalidExactSemver2_0_0Versions = map[string]string{
+	"01.2.3":    "unexpected preceding zero in major component",
+	"1.02.3":    "unexpected preceding zero in minor component",
+	"1.2.03":    "unexpected preceding zero in patch component",
+	"00.0.0":    "unexpected preceding zero in major component",
+	"1.2":       "version incomplete: missing patch component",
+	"1":         "version incomplete: missing minor component",
+	"x":         "unexpected character 'x' at position 0",
+	"1.2.y":     "unexpected character 'y' at position 4",
+	".2.3":      "zero-length major component",
+	"1..3":      "zero-length minor component",
+	"1.2.-beta": "zero-length patch component",
+}
+
+func TestParseExactSemver2_0_0Error(t *testing.T) {
+	for input, expectedError := range invalidExactSemver2_0_0Versions {
+		_, err := ParseExactSemver2_0_0(input)
+		if err == nil {
+			t.Errorf("successfully parsed invalid semver 2.0.0 string %q as version", input)
 		}
 		if !strings.Contains(err.Error(), expectedError) {
 			t.Errorf("got error message %q; expected %q", err.Error(), expectedError)
