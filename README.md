@@ -74,6 +74,20 @@ Version string parsing using `Parse()` is permissive by default. All of the foll
 - `"1.2+abc"` parses as `{Major: 1, Minor: 2, Patch: 0, Pre: "", Meta: "abc"}`
 - `"1.2-beta+abc"` parses as `{Major: 1, Minor: 2, Patch: 0, Pre: "beta", Meta: "abc"}`
 
+Note that whilts permissive, parse will still return errors for the following conditions:
+
+- `UnexpectedCharacter` when encountering anything other than:
+  - `[0-9.]` in a major or minor field,
+  - `[0-9]-+`, in a patch field,
+  - `[0-9a-zA-Z-]` in a prerelease or meta field.
+- `ZeroLengthNumeric` when encountering 2 dots together in the major, minor,
+  patch fields.
+
+If you want to validate that input is in exact semver 2.0.0 format, you should use `ParseExactSemver2` instead, which returns these additional errors:
+- `VersionIncomplete` when either the minor or patch fields are missing
+- `PrecedingZero` when a major, minor, or patch contains an erroneous preceding
+  zero character.
+
 ### Range Parsing
 
 Range parsing  using `ParseRange` and `MustParseRange` allows common range specifiers like `>`, `>=`, `<`, `<=`, as well as modern range shorcuts as used in npm and other tools: `^` and `~`.
