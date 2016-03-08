@@ -205,3 +205,25 @@ func (v Version) PreComponents() []string {
 func (v Version) Equals(to Version) bool {
 	return !v.Less(to) && !to.Less(v)
 }
+
+func (v Version) Satisfies(r Range) bool {
+	return r.SatisfiedBy(v)
+}
+
+func (v Version) IncrementMajor() Version {
+	v.Major++
+	v.Minor = 0
+	v.Patch = 0
+	return v
+}
+
+func (v Version) IncrementMinor() Version {
+	v.Minor++
+	v.Patch = 0
+	return v
+}
+
+func (v Version) IncrementPatch() Version {
+	v.Patch++
+	return v
+}

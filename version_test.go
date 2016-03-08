@@ -181,3 +181,23 @@ func TestEquals(t *testing.T) {
 		}
 	}
 }
+
+func TestIncrements(t *testing.T) {
+	v1 := MustParse("1.0.0")
+	v1_0_1 := v1.IncrementPatch()
+	if v1_0_1.String() != "1.0.1" {
+		t.Errorf("expected increment to 1.0.1; got %q", v1)
+	}
+	v1_1_0 := v1_0_1.IncrementMinor()
+	if v1_1_0.String() != "1.1.0" {
+		t.Errorf("expected increment minor to 1.1.0; got %q", v1)
+	}
+	v1_1_1 := v1_1_0.IncrementPatch()
+	if v1_1_1.String() != "1.1.1" {
+		t.Errorf("expected increment patch to 1.1.1; got %q", v1)
+	}
+	v2_0_0 := v1_1_1.IncrementMajor()
+	if v2_0_0.String() != "2.0.0" {
+		t.Errorf("expected increment major to 2.0.0; got %q", v1)
+	}
+}
