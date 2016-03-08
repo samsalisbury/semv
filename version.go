@@ -7,14 +7,29 @@ import (
 	"strings"
 )
 
-type Version struct {
-	Major, Minor, Patch      int
-	Pre, Meta, DefaultFormat string
-}
-
-type Range struct {
-	GreaterThan, LessThan Version
-}
+type (
+	// Version is a semver version
+	Version struct {
+		Major, Minor, Patch      int
+		Pre, Meta, DefaultFormat string
+	}
+	// Range is a semver range
+	Range struct {
+		GreaterThan, LessThan Version
+	}
+	// VersionIncomplete is an error returned by ParseExactSemver2_0_0
+	// when a version is missing either minor or patch parts.
+	VersionIncomplete struct {
+		MissingPart string
+	}
+	// UnexpectedCharacter is an error returned by Parse and ParseExactSemver2_0_0
+	// when they contain unexpected characters at a particular location.
+	UnexpectedCharacter struct {
+		Char rune
+		Pos  int
+	}
+	mode uint
+)
 
 func NewVersion(major, minor, patch int, pre, meta string) Version {
 	return Version{major, minor, patch, pre, meta, ""}
@@ -24,29 +39,33 @@ func NewMajorMinorPatch(major, minor, patch int) Version {
 	return Version{major, minor, patch, "", "", ""}
 }
 
-type mode uint
+func (err VersionIncomplete) Error() string {
+	return fmt.Sprintf("version incomplete: missing %s", err.MissingPart)
+}
 
-const (
-	modeMajor       mode = iota
-	modeMinor            = iota
-	modePatch            = iota
-	modePre              = iota
-	modeMeta             = iota
-	digits               = "01234567890"
-	Major                = "M"
-	Minor                = "m"
-	Patch                = "p"
-	PreDelim             = "-"
-	Pre                  = PreDelim + "?"
-	PreRaw               = PreDelim + "!"
-	MetaDelim            = "+"
-	Meta                 = MetaDelim + "?"
-	MetaRaw              = MetaDelim + "!"
-	MajorMinor           = Major + "." + Minor
-	MajorMinorPatch      = MajorMinor + "." + Patch
-	MMPPre               = MajorMinorPatch + Pre
-	Complete             = MMPPre + Meta
-)
+func (err UnexpectedCharacter) Error() string {
+	return fmt.Sprintf("unexpected character '%s' at position %d", string(err.Char), err.Pos)
+}
+
+// Parse permissively parses the string as a semver value. The minimal string
+// which will not error is a single digit, which will be interpreted as a major
+// version, e.g. Parse("1").Format("M.m.p") == "1.0.0".
+func Parse(s string) (Version, error) {
+	v, err := parse(s)
+	if err == nil {
+		return v, nil
+	}
+	if _, ok := err.(VersionIncomplete); ok {
+		return v, nil
+	}
+	return v, err
+}
+
+// ParseExactSemver2_0_0 returns an error, and an incomplete Version if the
+// string passed in does not conform exactly to semver 2.0.0
+func ParseExactSemver2_0_0(s string) (Version, error) {
+	return parse(s)
+}
 
 // ParseAny tries to parse any version found in a string. It starts
 // parsing at the first decimal digit [0-9], and stops when it finds
@@ -61,10 +80,33 @@ func ParseAny(s string) (Version, error) {
 	return v, nil
 }
 
-func Parse(s string) (Version, error) {
-	var parsedMinor, parsedPatch bool
+const (
+	modeMajor            mode = iota
+	modeMinor                 = iota
+	modePatch                 = iota
+	modePre                   = iota
+	modeMeta                  = iota
+	digits                    = "01234567890"
+	validPreAndMetaChars      = digits + ".-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	Major                     = "M"
+	Minor                     = "m"
+	Patch                     = "p"
+	PreDelim                  = "-"
+	Pre                       = PreDelim + "?"
+	PreRaw                    = PreDelim + "!"
+	MetaDelim                 = "+"
+	Meta                      = MetaDelim + "?"
+	MetaRaw                   = MetaDelim + "!"
+	MajorMinor                = Major + "." + Minor
+	MajorMinorPatch           = MajorMinor + "." + Patch
+	MMPPre                    = MajorMinorPatch + Pre
+	Complete                  = MMPPre + Meta
+	Semver_2_0_0              = Complete
+)
+
+func parse(s string) (Version, error) {
+	var parsedMinor, parsedPatch, parsedPre, parsedMeta bool
 	var (
-		v     Version
 		major = &bytes.Buffer{}
 		minor = &bytes.Buffer{}
 		patch = &bytes.Buffer{}
@@ -81,18 +123,53 @@ func Parse(s string) (Version, error) {
 	m := modeMajor
 	var i int
 	var c rune
-	unexpectedCharacter := func() error {
-		return fmt.Errorf("unexpected character '%s' at position %d", string(c), i)
+	firstErr := func(errs ...error) error {
+		for _, err := range errs {
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	// finalise takes the current buffers and tries to return a partial version
+	finalise := func(knownError error) (Version, error) {
+		var err error
+		v := Version{}
+		v.DefaultFormat = Major
+		if v.Major, err = strconv.Atoi(major.String()); err != nil {
+			return v, firstErr(knownError, err)
+		}
+		if parsedMinor {
+			v.DefaultFormat = MajorMinor
+			if v.Minor, err = strconv.Atoi(minor.String()); err != nil {
+				return v, firstErr(knownError, err)
+			}
+		}
+		if parsedPatch {
+			v.DefaultFormat = MajorMinorPatch
+			if v.Patch, err = strconv.Atoi(patch.String()); err != nil {
+				return v, firstErr(knownError, err)
+			}
+		}
+		if parsedPre {
+			v.DefaultFormat = v.DefaultFormat + "-?"
+		}
+		if parsedMeta {
+			v.DefaultFormat = v.DefaultFormat + "+?"
+		}
+		v.Pre = pre.String()
+		v.Meta = meta.String()
+		return v, firstErr(knownError, v.Validate())
 	}
 	changeMode := func() (bool, error) {
 		if (m == modePre || m == modeMeta) && c == '-' {
 			return false, nil
 		}
 		if m == modeMeta && c == '+' {
-			return false, unexpectedCharacter()
+			return false, UnexpectedCharacter{c, i}
 		}
 		if m == modePatch && c == '.' {
-			return false, unexpectedCharacter()
+			return false, UnexpectedCharacter{c, i}
 		}
 		if (m == modeMajor || m == modeMinor) && c == '.' {
 			m++
@@ -115,11 +192,17 @@ func Parse(s string) (Version, error) {
 		if m == modePatch {
 			parsedPatch = true
 		}
+		if m == modePre {
+			parsedPre = true
+		}
+		if m == modeMeta {
+			parsedMeta = true
+		}
 		switch c {
 		case '.', '-', '+':
 			changed, err := changeMode()
 			if err != nil {
-				return v, err
+				return finalise(err)
 			}
 			if changed {
 				continue
@@ -127,36 +210,26 @@ func Parse(s string) (Version, error) {
 		}
 		switch m {
 		case modeMajor, modeMinor, modePatch:
-			switch c {
-			default:
-				return v, unexpectedCharacter()
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			if strings.ContainsRune(digits, c) {
 				targets[m].WriteRune(c)
+			} else {
+				return finalise(UnexpectedCharacter{c, i})
 			}
 		case modePre, modeMeta:
-			targets[m].WriteRune(c)
+			if strings.ContainsRune(validPreAndMetaChars, c) {
+				targets[m].WriteRune(c)
+			} else {
+				return finalise(UnexpectedCharacter{c, i})
+			}
 		}
 	}
-	var err error
-	v.DefaultFormat = Major
-	if v.Major, err = strconv.Atoi(major.String()); err != nil {
-		return v, err
+	if !parsedMinor {
+		return finalise(VersionIncomplete{"minor"})
 	}
-	if parsedMinor {
-		v.DefaultFormat = MajorMinor
-		if v.Minor, err = strconv.Atoi(minor.String()); err != nil {
-			return v, err
-		}
+	if !parsedPatch {
+		return finalise(VersionIncomplete{"patch"})
 	}
-	if parsedPatch {
-		v.DefaultFormat = ""
-		if v.Patch, err = strconv.Atoi(patch.String()); err != nil {
-			return v, err
-		}
-	}
-	v.Pre = pre.String()
-	v.Meta = meta.String()
-	return v, v.Validate()
+	return finalise(nil)
 }
 
 func (v Version) Validate() error {
