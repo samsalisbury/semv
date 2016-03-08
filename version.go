@@ -2,6 +2,7 @@ package semv
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -142,4 +143,61 @@ func (v Version) Format(format string) string {
 	formatted = strings.Replace(formatted, PreRaw, v.Pre, -1)
 	formatted = strings.Replace(formatted, MetaRaw, v.Meta, -1)
 	return formatted
+}
+
+func (v Version) Less(than Version) bool {
+	if v.Major < than.Major {
+		return true
+	}
+	if v.Major > than.Major {
+		return false
+	}
+	if v.Minor < than.Minor {
+		return true
+	}
+	if v.Minor > than.Minor {
+		return false
+	}
+	if v.Patch < than.Patch {
+		return true
+	}
+	if v.Patch > than.Patch {
+		return false
+	}
+	if v.Pre != "" && than.Pre == "" {
+		return true
+	}
+	if v.Pre == "" && than.Pre == "" {
+		return false
+	}
+	vPreParts := v.PreComponents()
+	thanPreParts := than.PreComponents()
+	for i := range thanPreParts {
+		if vInt, err := strconv.Atoi(vPreParts[i]); err == nil {
+			if tInt, err := strconv.Atoi(thanPreParts[i]); err == nil {
+				if vInt < tInt {
+					return true
+				}
+				if vInt > tInt {
+					return false
+				}
+			} else {
+				return true
+			}
+		}
+		if vPreParts[i] < thanPreParts[i] {
+			return true
+		}
+		if vPreParts[i] > thanPreParts[i] {
+			return false
+		}
+		if len(vPreParts) == i+1 && len(thanPreParts) > len(vPreParts) {
+			return true
+		}
+	}
+	return false
+}
+
+func (v Version) PreComponents() []string {
+	return strings.Split(v.Pre, ".")
 }

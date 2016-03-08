@@ -137,3 +137,26 @@ func TestParseExactSemver2_0_0Error(t *testing.T) {
 		}
 	}
 }
+
+// orderedVersions uses the specific example from §11 of the semver spec at
+// http://semver.org/spec/v2.0.0.html
+var orderedVersions = []Version{
+	MustParseExactSemver2_0_0("1.0.0-alpha"),
+	MustParseExactSemver2_0_0("1.0.0-alpha.1"),
+	MustParseExactSemver2_0_0("1.0.0-alpha.beta"),
+	MustParseExactSemver2_0_0("1.0.0-beta"),
+	MustParseExactSemver2_0_0("1.0.0-beta.2"),
+	MustParseExactSemver2_0_0("1.0.0-beta.11"),
+	MustParseExactSemver2_0_0("1.0.0-rc.1"),
+	MustParseExactSemver2_0_0("1.0.0"),
+}
+
+func TestLess(t *testing.T) {
+	for i := 1; i < len(orderedVersions); i++ {
+		lesser := orderedVersions[i-1]
+		greater := orderedVersions[i]
+		if !lesser.Less(greater) {
+			t.Errorf("expected %q to be less than %q", lesser, greater)
+		}
+	}
+}

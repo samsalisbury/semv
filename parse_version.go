@@ -29,6 +29,47 @@ func Parse(s string) (Version, error) {
 	return v, nil
 }
 
+// MustParse is like Parse, but panics on errors. This is useful when
+// initialising versions in the global scope.
+func MustParse(s string) Version {
+	v, err := Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// ParseExactSemver2_0_0 returns an error, and an incomplete Version if the
+// string passed in does not conform exactly to semver 2.0.0
+func ParseExactSemver2_0_0(s string) (Version, error) {
+	v, errs := parse(s)
+	return v, firstErr(errs...)
+}
+
+// MustParseExactSemver2_0_0 is like ParseExactSemver2_0_0, excapt that
+// it panics on errors. This is useful in when initialising version in
+// the global scope.
+func MustParseExactSemver2_0_0(s string) Version {
+	v, err := ParseExactSemver2_0_0(s)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// ParseAny tries to parse any version found in a string. It starts
+// parsing at the first decimal digit [0-9], and stops when it finds
+// an invalid character. It returns an error only if there are no
+// digits found in the string.
+func ParseAny(s string) (Version, error) {
+	startIndex := strings.IndexAny(s, digits)
+	if startIndex == -1 {
+		return Version{}, fmt.Errorf("no version found in %q", s)
+	}
+	v, _ := Parse(s[startIndex:])
+	return v, nil
+}
+
 func parse(s string) (Version, []error) {
 	var parsedMinor, parsedPatch, parsedPre, parsedMeta bool
 	var (
@@ -160,26 +201,6 @@ func parse(s string) (Version, []error) {
 		return finalise(VersionIncomplete{"patch"})
 	}
 	return finalise(nil)
-}
-
-// ParseExactSemver2_0_0 returns an error, and an incomplete Version if the
-// string passed in does not conform exactly to semver 2.0.0
-func ParseExactSemver2_0_0(s string) (Version, error) {
-	v, errs := parse(s)
-	return v, firstErr(errs...)
-}
-
-// ParseAny tries to parse any version found in a string. It starts
-// parsing at the first decimal digit [0-9], and stops when it finds
-// an invalid character. It returns an error only if there are no
-// digits found in the string.
-func ParseAny(s string) (Version, error) {
-	startIndex := strings.IndexAny(s, digits)
-	if startIndex == -1 {
-		return Version{}, fmt.Errorf("no version found in %q", s)
-	}
-	v, _ := Parse(s[startIndex:])
-	return v, nil
 }
 
 func replaceAll(s string, replacements map[string]interface{}) string {
