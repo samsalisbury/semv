@@ -9,6 +9,10 @@ type (
 	}
 )
 
+// ParseRange attempts to parse the passed string as a semver range. It
+// allows the caret ^ and tilde ~ prefixes, as used by NPM, and also
+// >, >=, <, <= as prefixes to indicate greater than, greater than or
+// equal to, less than, and less than or equal to, respectively.
 func ParseRange(s string) (Range, error) {
 	v, err := ParseAny(s)
 	if err != nil {
@@ -39,30 +43,47 @@ func ParseRange(s string) (Range, error) {
 	return Range{}, fmt.Errorf("unable to parse version range %q", s)
 }
 
+// GreaterThan returns a range satisfied by any version greater than
+// the version passed in, according to semver 2.0.0 precedence rules.
 func GreaterThan(v Version) Range {
 	return Range{Min: &v}
 }
 
+// LessThan returns a range satisfied by any version less than the
+// version passed in, according to semver 2.0.0 precedence rules.
 func LessThan(v Version) Range {
 	return Range{Max: &v}
 }
 
+// EqualTo returns a range satisfied only by the specific version passed
+// in, according to semver 2.0.0 precedence rules.
 func EqualTo(v Version) Range {
 	return Range{MinEqual: &v, MaxEqual: &v}
 }
 
+// GreaterThanOrEqualTo is similar to GreaterThan, but the Range returned
+// is additionally satisfied by versions exactly equal to the version
+// passed in, according to semver 2.0.0 precedence rules.
 func GreaterThanOrEqualTo(v Version) Range {
 	return Range{MinEqual: &v}
 }
 
+// LessThanOrEqualTo is similar to LessThan, but the Range returned
+// is additionally satisfied by versions exactly equal to the version
+// passed in, according to semver 2.0.0 precedence rules.
 func LessThanOrEqualTo(v Version) Range {
 	return Range{MaxEqual: &v}
 }
 
+// GreaterThanOrEqualToAndLessThan returns Range that is satisfied by
+// versions greater than or equal to the first, and less than the second,
+// of the versions passed in, according to semver 2.0.0 precedence rules.
 func GreaterThanOrEqualToAndLessThan(min, lessThan Version) Range {
 	return Range{MinEqual: &min, Max: &lessThan}
 }
 
+// SatisfiedBy returns true if the version passed in fits inside the range
+// the method is invoked on.
 func (r Range) SatisfiedBy(v Version) bool {
 	if r.Min != nil && !r.Min.Less(v) {
 		return false
@@ -80,6 +101,8 @@ func (r Range) SatisfiedBy(v Version) bool {
 	return true
 }
 
+// String returns the minimal string representation of this range. For example,
+// the range ">=1.0.0 <2.0.0" is compressed to "^1.0.0"
 func (r Range) String() string {
 	// Special case for exact equality range
 	if r.MinEqual != nil && r.MaxEqual != nil && r.MaxEqual.Equals(*r.MinEqual) {
@@ -115,6 +138,8 @@ func (r Range) String() string {
 	return out
 }
 
+// Equals returns true if the version passed in has exactly the same
+// allowable version range as the version Equals was invoked on.
 func (r Range) Equals(other Range) bool {
 	return r.Min.ValueEquals(other.Min) &&
 		r.Max.ValueEquals(other.Max) &&
