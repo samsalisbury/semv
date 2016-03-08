@@ -201,3 +201,7 @@ func (v Version) Less(than Version) bool {
 func (v Version) PreComponents() []string {
 	return strings.Split(v.Pre, ".")
 }
+
+func (v Version) Equals(to Version) bool {
+	return !v.Less(to) && !to.Less(v)
+}

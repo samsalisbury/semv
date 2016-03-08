@@ -160,3 +160,21 @@ func TestLess(t *testing.T) {
 		}
 	}
 }
+
+var equalVersions = []Version{
+	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+abc"),
+	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+123"),
+	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+gsfdnjfdhisg9efwd897ywrfwerf"),
+	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+abc.def.ghy.123"),
+	MustParseExactSemver2_0_0("1.0.0-alpha.1.4-beta.2+123.456.789.abc"),
+}
+
+func TestEquals(t *testing.T) {
+	for _, v := range equalVersions {
+		for _, to := range equalVersions {
+			if !v.Equals(to) {
+				t.Errorf("expected %q to equal %q", v, to)
+			}
+		}
+	}
+}
