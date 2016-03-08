@@ -22,13 +22,6 @@ var reversibleVersions = map[string]Version{
 	"100.100.100-beta-dash-21+some-dashing--metadata.45": {100, 100, 100, "beta-dash-21", "some-dashing--metadata.45", Complete},
 }
 
-// invalidVersions list invalid versions and the expected error messages
-var invalidVersions = map[string]string{
-	"x.1.2": "unexpected character 'x' at position 0",
-	"1.x.2": "unexpected character 'x' at position 2",
-	"1.2.x": "unexpected character 'x' at position 4",
-}
-
 func TestString(t *testing.T) {
 	for expectedString, inputVersion := range reversibleVersions {
 		if s := inputVersion.String(); s != expectedString {
@@ -69,6 +62,13 @@ func TestParseAny(t *testing.T) {
 			t.Errorf("got version %q from %q; expected %q", actual, input, expected)
 		}
 	}
+}
+
+// invalidVersions list invalid versions and the expected error messages
+var invalidVersions = map[string]string{
+	"x.1.2": "unexpected character 'x' at position 0",
+	"1.x.2": "unexpected character 'x' at position 2",
+	"1.2.x": "unexpected character 'x' at position 4",
 }
 
 func TestParseError(t *testing.T) {

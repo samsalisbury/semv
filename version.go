@@ -28,6 +28,19 @@ type (
 		Char rune
 		Pos  int
 	}
+	// ZeroLengthNumeric is an error returned when either major, minor, or
+	// patch is zero length. That is, when parsing a string containing two
+	// consecutive dots. E.g. "1..3" or "..1"
+	ZeroLengthNumeric struct {
+		ZeroLengthPart string
+	}
+	// PrecedingZero is an error returned when one of the major, minor, or
+	// patch parts contains a preceding zero. This error is only returned
+	// when using ParseExactSemver2_0_0, and this validation is ignored
+	// otherwise.
+	PrecedingZero struct {
+		PrecedingZeroPart, InputString string
+	}
 	mode uint
 )
 
@@ -45,6 +58,15 @@ func (err VersionIncomplete) Error() string {
 
 func (err UnexpectedCharacter) Error() string {
 	return fmt.Sprintf("unexpected character '%s' at position %d", string(err.Char), err.Pos)
+}
+
+func (err ZeroLengthNumeric) Error() string {
+	return fmt.Sprintf("unexpected zero-length %s", err.ZeroLengthPart)
+}
+
+func (err PrecedingZero) Error() string {
+	return fmt.Sprintf("unexpected preceding zero on %s: %q",
+		err.PrecedingZeroPart, err.InputString)
 }
 
 // Parse permissively parses the string as a semver value. The minimal string
@@ -123,32 +145,36 @@ func parse(s string) (Version, error) {
 	m := modeMajor
 	var i int
 	var c rune
-	firstErr := func(errs ...error) error {
-		for _, err := range errs {
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	}
 	// finalise takes the current buffers and tries to return a partial version
-	finalise := func(knownError error) (Version, error) {
+	finalise := func(knownErrors ...error) (Version, error) {
 		var err error
 		v := Version{}
 		v.DefaultFormat = Major
-		if v.Major, err = strconv.Atoi(major.String()); err != nil {
-			return v, firstErr(knownError, err)
+		majorString := major.String()
+		if v.Major, err = strconv.Atoi(majorString); err != nil {
+			return v, firstErr(append(knownErrors, err)...)
+		}
+		if err := validateMMPFormat(majorString, "major"); err != nil {
+			knownErrors = append(knownErrors, err)
 		}
 		if parsedMinor {
 			v.DefaultFormat = MajorMinor
-			if v.Minor, err = strconv.Atoi(minor.String()); err != nil {
-				return v, firstErr(knownError, err)
+			minorString := minor.String()
+			if v.Minor, err = strconv.Atoi(minorString); err != nil {
+				return v, firstErr(append(knownErrors, err)...)
+			}
+			if err := validateMMPFormat(minorString, "minor"); err != nil {
+				knownErrors = append(knownErrors, err)
 			}
 		}
 		if parsedPatch {
 			v.DefaultFormat = MajorMinorPatch
-			if v.Patch, err = strconv.Atoi(patch.String()); err != nil {
-				return v, firstErr(knownError, err)
+			patchString := patch.String()
+			if v.Patch, err = strconv.Atoi(patchString); err != nil {
+				return v, firstErr(append(knownErrors, err)...)
+			}
+			if err := validateMMPFormat(patchString, "patch"); err != nil {
+				knownErrors = append(knownErrors, err)
 			}
 		}
 		if parsedPre {
@@ -159,7 +185,7 @@ func parse(s string) (Version, error) {
 		}
 		v.Pre = pre.String()
 		v.Meta = meta.String()
-		return v, firstErr(knownError, v.Validate())
+		return v, firstErr(append([]error{v.Validate()}, knownErrors...)...)
 	}
 	changeMode := func() (bool, error) {
 		if (m == modePre || m == modeMeta) && c == '-' {
@@ -294,4 +320,23 @@ func replaceAll(s string, replacements map[string]interface{}) string {
 		s = strings.Replace(s, what, fmt.Sprint(replacement), -1)
 	}
 	return s
+}
+
+func firstErr(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateMMPFormat(s, name string) error {
+	if len(s) == 0 {
+		return ZeroLengthNumeric{name}
+	}
+	if len(s) > 1 && s[0] == '0' {
+		return PrecedingZero{name, s}
+	}
+	return nil
 }
