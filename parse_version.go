@@ -39,14 +39,14 @@ func MustParse(s string) Version {
 	return v
 }
 
-// ParseExactSemver2_0_0 returns an error, and an incomplete Version if the
+// ParseExactSemver2 returns an error, and an incomplete Version if the
 // string passed in does not conform exactly to semver 2.0.0
 func ParseExactSemver2(s string) (Version, error) {
 	v, errs := parse(s)
 	return v, firstErr(errs...)
 }
 
-// MustParseExactSemver2_0_0 is like ParseExactSemver2_0_0, excapt that
+// MustParseExactSemver2 is like ParseExactSemver2, excapt that
 // it panics on errors. This is useful in when initialising version in
 // the global scope.
 func MustParseExactSemver2(s string) Version {

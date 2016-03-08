@@ -12,12 +12,12 @@ type (
 		Major, Minor, Patch      int
 		Pre, Meta, DefaultFormat string
 	}
-	// VersionIncomplete is an error returned by ParseExactSemver2_0_0
+	// VersionIncomplete is an error returned by ParseExactSemver2
 	// when a version is missing either minor or patch parts.
 	VersionIncomplete struct {
 		MissingPart string
 	}
-	// UnexpectedCharacter is an error returned by Parse and ParseExactSemver2_0_0
+	// UnexpectedCharacter is an error returned by Parse and ParseExactSemver2
 	// when they contain unexpected characters at a particular location.
 	UnexpectedCharacter struct {
 		Char rune
