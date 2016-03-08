@@ -1,6 +1,9 @@
 package semv
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 var (
 	v1_0_0 = MustParse("1.0.0")
@@ -84,4 +87,73 @@ func TestRangeString(t *testing.T) {
 			t.Errorf("got range string %q; expected %q", actual, expectedString)
 		}
 	}
+}
+
+var rangesToSatisfactoryVersions = map[string][]string{
+	"1.0.0":   {"1.0.0", "1.0.0+whatever"},
+	"^1.0.0":  {"1.99.99", "1.999.0+whatever"},
+	"~1.0.0":  {"1.0.9999", "1.0.9999+whatever"},
+	">1.0.0":  {"1.0.1", "2.0.0", "10009.0.0", "1.1.0+whatever"},
+	"<1.0.0":  {"1.0.0-beta", "0.9.9", "0.0.1", "0.0.0"},
+	">=1.0.0": {"1.0.0", "1.0.1", "1.1.0", "2.0.0", "999.0.0"},
+	"<=1.0.0": {"1.0.0", "0.0.9", "0.999.999", "0.0.0", "0.0.1"},
+}
+
+func TestIsSatisfiedBy(t *testing.T) {
+	for rangeString, versionStrings := range rangesToSatisfactoryVersions {
+		r, err := ParseRange(rangeString)
+		if err != nil {
+			t.Errorf("unexpected range parsing error: %s", err)
+			continue
+		}
+		for _, vs := range versionStrings {
+			v, err := Parse(vs)
+			if err != nil {
+				t.Errorf("unexpected version parsing error: %s", err)
+				continue
+			}
+			if !r.SatisfiedBy(v) {
+				t.Errorf("expected range %q to be satisfied by version %q", r, v)
+			}
+		}
+	}
+}
+
+var rangesToUnsatisfactoryVersions = map[string][]string{
+	"1.0.0":   {"1.0.0-beta", "1.0.1"},
+	"^1.2.3":  {"1.2.3-beta", "2.0.0", "1.0.0", "0.0.0"},
+	"~1.2.3":  {"1.2.3-beta", "1.2.2", "1.3.0"},
+	">1.0.0":  {"1.0.0", "1.0.0-beta", "0.0.0", "0.9.9", "0.0.1"},
+	"<1.0.0":  {"1.0.0", "1.0.1", "2.1.0"},
+	">=1.0.0": {"1.0.0-beta", "0.9.9", "0.0.1", "0.0.0"},
+	"<=1.0.0": {"1.0.1", "1.1.0", "1.0.1-beta"},
+}
+
+func TestIsNotSatisfiedBy(t *testing.T) {
+	for rangeString, versionStrings := range rangesToUnsatisfactoryVersions {
+		r, err := ParseRange(rangeString)
+		if err != nil {
+			t.Errorf("unexpected range parsing error: %s", err)
+			continue
+		}
+		for _, vs := range versionStrings {
+			v, err := Parse(vs)
+			if err != nil {
+				t.Errorf("unexpected version parsing error: %s", err)
+				continue
+			}
+			if r.SatisfiedBy(v) {
+				t.Errorf("expected range %q not to be satisfied by version %q:\nRange: %s\nVersion:%s",
+					r, v, r.dump(), v.dump())
+			}
+		}
+	}
+}
+
+func (r Range) dump() string {
+	b, err := json.Marshal(r)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }

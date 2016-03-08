@@ -167,7 +167,7 @@ func (v Version) Less(than Version) bool {
 	if v.Pre != "" && than.Pre == "" {
 		return true
 	}
-	if v.Pre == "" && than.Pre == "" {
+	if v.Pre == "" && than.Pre != "" {
 		return false
 	}
 	vPreParts := v.PreComponents()

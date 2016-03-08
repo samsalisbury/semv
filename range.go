@@ -30,22 +30,11 @@ func ParseRange(s string) (Range, error) {
 	case '<':
 		return LessThan(v), nil
 	case '~':
-		max := v
-		max.Minor++
-		max.Patch = 0
-		return Range{
-			MinEqual: &v,
-			Max:      &max,
-		}, nil
+		max := v.IncrementMinor()
+		return GreaterThanOrEqualToAndLessThan(v, max), nil
 	case '^':
-		max := v
-		max.Major++
-		max.Minor = 0
-		max.Patch = 0
-		return Range{
-			MinEqual: &v,
-			Max:      &max,
-		}, nil
+		max := v.IncrementMajor()
+		return GreaterThanOrEqualToAndLessThan(v, max), nil
 	}
 	return Range{}, fmt.Errorf("unable to parse version range %q", s)
 }
@@ -75,26 +64,19 @@ func GreaterThanOrEqualToAndLessThan(min, lessThan Version) Range {
 }
 
 func (r Range) SatisfiedBy(v Version) bool {
-	if r.Min != nil {
-		if !r.Min.Less(v) {
-			return false
-		}
+	if r.Min != nil && !r.Min.Less(v) {
+		return false
 	}
-	if r.Max != nil {
-		if !v.Less(*r.Max) {
-			return false
-		}
+	if r.Max != nil && !v.Less(*r.Max) {
+		return false
 	}
-	if r.MinEqual != nil {
-		if !v.Equals(*r.MinEqual) && !r.MinEqual.Less(v) {
-			return false
-		}
+	if r.MinEqual != nil && !v.Equals(*r.MinEqual) && !r.MinEqual.Less(v) {
+		return false
 	}
-	if r.MaxEqual != nil {
-		if !v.Equals(*r.MaxEqual) && !v.Less(*r.MaxEqual) {
-			return false
-		}
+	if r.MaxEqual != nil && !v.Equals(*r.MaxEqual) && !v.Less(*r.MaxEqual) {
+		return false
 	}
+
 	return true
 }
 

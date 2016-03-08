@@ -1,6 +1,7 @@
 package semv
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -161,6 +162,15 @@ func TestLess(t *testing.T) {
 		if !lesser.Less(greater) {
 			t.Errorf("expected %q to be less than %q", lesser, greater)
 		}
+		if greater.Less(lesser) {
+			t.Errorf("expected %q not to be less than %q", greater, lesser)
+		}
+	}
+}
+
+func TestLess2(t *testing.T) {
+	if !MustParse("1.2.3-beta").Less(MustParse("1.2.3")) {
+		t.Errorf("expected 1.0.0-beta to be less than 1.0.0")
 	}
 }
 
@@ -182,6 +192,12 @@ func TestEquals(t *testing.T) {
 	}
 }
 
+func TestNotEquals(t *testing.T) {
+	if MustParse("0.0.0-beta") == MustParse("0.0.0") {
+		t.Errorf("expected 0.0.0-beta ≠ 0.0.0")
+	}
+}
+
 func TestIncrements(t *testing.T) {
 	v1 := MustParse("1.0.0")
 	v1_0_1 := v1.IncrementPatch()
@@ -200,4 +216,12 @@ func TestIncrements(t *testing.T) {
 	if v2_0_0.String() != "2.0.0" {
 		t.Errorf("expected increment major to 2.0.0; got %q", v1)
 	}
+}
+
+func (v Version) dump() string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }
