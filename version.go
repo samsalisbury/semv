@@ -39,10 +39,13 @@ type (
 	mode uint
 )
 
+// NewVersion returns a new version with all fields set.
 func NewVersion(major, minor, patch int, pre, meta string) Version {
 	return Version{major, minor, patch, pre, meta, ""}
 }
 
+// NewMajorMinorPatch returns a new version with just the major, minor, and patch
+// fields set.
 func NewMajorMinorPatch(major, minor, patch int) Version {
 	return Version{major, minor, patch, "", "", ""}
 }
@@ -72,22 +75,34 @@ const (
 	modeMeta                  = iota
 	digits                    = "01234567890"
 	validPreAndMetaChars      = digits + ".-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	Major                     = "M"
-	Minor                     = "m"
-	Patch                     = "p"
-	PreDelim                  = "-"
-	Pre                       = PreDelim + "?"
-	PreRaw                    = PreDelim + "!"
-	MetaDelim                 = "+"
-	Meta                      = MetaDelim + "?"
-	MetaRaw                   = MetaDelim + "!"
-	MajorMinor                = Major + "." + Minor
-	MajorMinorPatch           = MajorMinor + "." + Patch
-	MMPPre                    = MajorMinorPatch + Pre
-	Complete                  = MMPPre + Meta
-	Semver_2_0_0              = Complete
+	// PreDelim is the character separating major.minor.patch from the prerelease field.
+	PreDelim = "-"
+	// MetaDelim is the character separating major.minor.patch[-pre] from the metadata field.
+	MetaDelim = "+"
+	// Formatting characters Major, Minor, Patch, Pre, PreRaw, Meta, MetaRaw are used by
+	// Version.Format
+	Major   = "M"
+	Minor   = "m"
+	Patch   = "p"
+	Pre     = PreDelim + "?"
+	PreRaw  = PreDelim + "!"
+	Meta    = MetaDelim + "?"
+	MetaRaw = MetaDelim + "!"
+	// MajorMinor is a format string used to format a version to just its major and minor
+	// components.
+	MajorMinor = Major + "." + Minor
+	// MajorMinorPatch is a format string used to format a version to just its major,
+	// minor, and patch fields.
+	MajorMinorPatch = MajorMinor + "." + Patch
+	// MMMPre is a format string, like MajorMinorPatch, with the prerelease field added
+	// if it is nonempty.
+	MMPPre = MajorMinorPatch + Pre
+	// Complete is a format string, like MMMPre, but it also includes the metadata field
+	// if it is nonempty.
+	Complete = MMPPre + Meta
 )
 
+// Validate ensures that none of the fields are negative.
 func (v Version) Validate() error {
 	if v.Major < 0 || v.Minor < 0 || v.Patch < 0 {
 		return fmt.Errorf("major, minor, patch must all be positive")
@@ -145,6 +160,8 @@ func (v Version) Format(format string) string {
 	return formatted
 }
 
+// Less returns true if the version it is invoked on is less than the version
+// passed in, according to the precendence rules in semver 2.0.0
 func (v Version) Less(than Version) bool {
 	if v.Major < than.Major {
 		return true
@@ -198,10 +215,14 @@ func (v Version) Less(than Version) bool {
 	return false
 }
 
+// PreComponents returns the prerelease field split by . characters.
 func (v Version) PreComponents() []string {
 	return strings.Split(v.Pre, ".")
 }
 
+// Equals returns true if the versions are equal according to semver 2.0.0 precedence
+// rules. If you want to test that the entire version is exactly equal, use the normal
+// '=' operator.
 func (v Version) Equals(other Version) bool {
 	return !v.Less(other) && !other.Less(v)
 }
@@ -219,10 +240,13 @@ func (v *Version) ValueEquals(other *Version) bool {
 	return (*v).Equals(*other)
 }
 
+// Satisfies is a convenience function. v.Satisfies(r) == r.IsSatisfied(v)
 func (v Version) Satisfies(r Range) bool {
 	return r.SatisfiedBy(v)
 }
 
+// IncrementMajor returns a new Version with the major field incremented by 1
+// and minor and patch set to zero.
 func (v Version) IncrementMajor() Version {
 	v.Major++
 	v.Minor = 0
@@ -230,13 +254,29 @@ func (v Version) IncrementMajor() Version {
 	return v
 }
 
+// IncrementMinor returns a new Version with the minor field incremented by 1
+// and the patch set to zero.
 func (v Version) IncrementMinor() Version {
 	v.Minor++
 	v.Patch = 0
 	return v
 }
 
+// IncrementPatch returns a new Version with the patch field incremented by 1.
 func (v Version) IncrementPatch() Version {
 	v.Patch++
+	return v
+}
+
+// SetPre retrns a new Version with the prerelease field set to the provided
+// string.
+func (v Version) SetPre(s string) Version {
+	v.Pre = s
+	return v
+}
+
+// SetMeta returns a new Version with the meta field set to the provided value.
+func (v Version) SetMeta(s string) Version {
+	v.Meta = s
 	return v
 }
