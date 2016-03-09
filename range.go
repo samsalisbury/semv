@@ -43,6 +43,16 @@ func ParseRange(s string) (Range, error) {
 	return Range{}, fmt.Errorf("unable to parse version range %q", s)
 }
 
+// MustParseRange is similar to ParseRange except that it panics instead
+// of returning an error.
+func MustParseRange(s string) Range {
+	r, err := ParseRange(s)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
 // GreaterThan returns a range satisfied by any version greater than
 // the version passed in, according to semver 2.0.0 precedence rules.
 func GreaterThan(v Version) Range {
