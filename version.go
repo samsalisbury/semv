@@ -122,6 +122,20 @@ func (v Version) String() string {
 	return v.Format(v.DefaultFormat)
 }
 
+// MajorMinorPatch returns a new version with the prerelease and meta fields
+// set to the empty string, and major, minor, patch equalling the
+// major, minor, patch of the version it was invoked on.
+func (v Version) MajorMinorPatch() Version {
+	v.Pre = ""
+	v.Meta = ""
+	return v
+}
+
+// IsPrerelease returns true if the prerelease field is not empty.
+func (v Version) IsPrerelease() bool {
+	return v.Pre != ""
+}
+
 // Format takes a format string and outputs the version accordingly.
 //
 // You can use the following format strings (which are available as constants):

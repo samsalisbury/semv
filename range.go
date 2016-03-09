@@ -95,17 +95,34 @@ func GreaterThanOrEqualToAndLessThan(min, lessThan Version) Range {
 // SatisfiedBy returns true if the version passed in fits inside the range
 // the method is invoked on.
 func (r Range) SatisfiedBy(v Version) bool {
-	if r.Min != nil && !r.Min.Less(v) {
-		return false
+	if r.Min != nil {
+		if !r.Min.Less(v) {
+			return false
+		} else if v.IsPrerelease() && !r.Min.IsPrerelease() {
+			return false
+		}
 	}
-	if r.Max != nil && !v.Less(*r.Max) {
-		return false
+	if r.MinEqual != nil {
+		if !v.Equals(*r.MinEqual) && !r.MinEqual.Less(v) {
+			return false
+		} else if v.IsPrerelease() && !r.MinEqual.IsPrerelease() {
+			return false
+		}
 	}
-	if r.MinEqual != nil && !v.Equals(*r.MinEqual) && !r.MinEqual.Less(v) {
-		return false
+
+	if r.Max != nil {
+		if !v.Less(*r.Max) {
+			return false
+		} else if v.IsPrerelease() && !r.Max.IsPrerelease() {
+			return false
+		}
 	}
-	if r.MaxEqual != nil && !v.Equals(*r.MaxEqual) && !v.Less(*r.MaxEqual) {
-		return false
+	if r.MaxEqual != nil {
+		if !v.Equals(*r.MaxEqual) && !v.Less(*r.MaxEqual) {
+			return false
+		} else if v.IsPrerelease() && !r.MaxEqual.IsPrerelease() {
+			return false
+		}
 	}
 
 	return true
