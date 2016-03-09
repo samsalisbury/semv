@@ -98,14 +98,14 @@ func (r Range) SatisfiedBy(v Version) bool {
 	if r.Min != nil {
 		if !r.Min.Less(v) {
 			return false
-		} else if v.IsPrerelease() && !r.Min.IsPrerelease() {
+		} else if v.IsPrerelease() && (!r.Min.IsPrerelease() || r.Min.MMPLess(v)) {
 			return false
 		}
 	}
 	if r.MinEqual != nil {
 		if !v.Equals(*r.MinEqual) && !r.MinEqual.Less(v) {
 			return false
-		} else if v.IsPrerelease() && !r.MinEqual.IsPrerelease() {
+		} else if v.IsPrerelease() && (!r.MinEqual.IsPrerelease() && !r.MinEqual.MMPLess(v) && !r.MinEqual.MMPEqual(v)) {
 			return false
 		}
 	}
@@ -113,14 +113,14 @@ func (r Range) SatisfiedBy(v Version) bool {
 	if r.Max != nil {
 		if !v.Less(*r.Max) {
 			return false
-		} else if v.IsPrerelease() && !r.Max.IsPrerelease() {
+		} else if v.IsPrerelease() && (!r.Max.IsPrerelease() || !v.MMPLess(*r.Max)) {
 			return false
 		}
 	}
 	if r.MaxEqual != nil {
 		if !v.Equals(*r.MaxEqual) && !v.Less(*r.MaxEqual) {
 			return false
-		} else if v.IsPrerelease() && !r.MaxEqual.IsPrerelease() {
+		} else if v.IsPrerelease() && !r.MaxEqual.IsPrerelease() && !v.MMPLess(*r.MaxEqual) && !v.MMPEqual(*r.MaxEqual) {
 			return false
 		}
 	}

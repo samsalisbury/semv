@@ -229,6 +229,18 @@ func (v Version) Less(than Version) bool {
 	return false
 }
 
+// MMPLess returns true if the version it is invoked on's major, minor, patch
+// triple is less than the passed in version's major, minor, patch triple.
+func (v Version) MMPLess(other Version) bool {
+	return v.MajorMinorPatch().Less(other.MajorMinorPatch())
+}
+
+// MMPEqual returns true if the major, minor, patch triple of the version it is
+// invoked in is equal to the major, minor, patch triple of the passed in version.
+func (v Version) MMPEqual(other Version) bool {
+	return v.MajorMinorPatch().Equals(other.MajorMinorPatch())
+}
+
 // PreComponents returns the prerelease field split by . characters.
 func (v Version) PreComponents() []string {
 	return strings.Split(v.Pre, ".")
