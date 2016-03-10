@@ -95,6 +95,7 @@ func GreaterThanOrEqualToAndLessThan(min, lessThan Version) Range {
 // SatisfiedBy returns true if the version passed in fits inside the range
 // the method is invoked on.
 func (r Range) SatisfiedBy(v Version) bool {
+	// TODO: This passes tests but is pretty horrible. Refactor it for readability.
 	if r.Min != nil {
 		if !r.Min.Less(v) {
 			return false
