@@ -77,7 +77,6 @@ func TestSortedDesc(t *testing.T) {
 	for i, ascV := range sortedAsc {
 		j := len(sortedDesc) - (i + 1)
 		descV := sortedDesc[j]
-		t.Logf("%q\t%q", sortedAsc[i], sortedDesc[i])
 		if !ascV.Equals(descV) {
 			failed = true
 		}

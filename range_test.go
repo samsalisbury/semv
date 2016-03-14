@@ -59,7 +59,7 @@ func TestEqualityToEqualCopy(t *testing.T) {
 	}
 }
 
-func TestParseRange(t *testing.T) {
+func TestParseRange_Valid(t *testing.T) {
 	for inputString, expected := range validRanges {
 		actual, err := ParseRange(inputString)
 		if err != nil {
@@ -68,6 +68,16 @@ func TestParseRange(t *testing.T) {
 		if !actual.Equals(expected) {
 			t.Errorf("parse range %q gave %q; wanted %q", inputString, actual, expected)
 		}
+	}
+}
+
+func TestParseRange_Invalid(t *testing.T) {
+	r, err := ParseRange("")
+	if err == nil {
+		t.Errorf(`ParseRange("") did not return an error`)
+	}
+	if (r != Range{}) {
+		t.Errorf(`ParseRange("") did not return a zeroed range`)
 	}
 }
 
