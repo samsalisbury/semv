@@ -16,6 +16,7 @@ var reversibleParseVersions = map[string]Version{
 	"1.2.3-beta.1":               {1, 2, 3, "beta.1", "", MMPPre},
 	"1.2.3-beta.1+some.metadata": {1, 2, 3, "beta.1", "some.metadata", Complete},
 	"0.0.0":                                              {0, 0, 0, "", "", MajorMinorPatch},
+	"0.0.0-beta":                                         {0, 0, 0, "beta", "", MMPPre},
 	"0.0.100-beta.1":                                     {0, 0, 100, "beta.1", "", MMPPre},
 	"0.100.100-beta.1+some.metadata":                     {0, 100, 100, "beta.1", "some.metadata", Complete},
 	"100.100.100-beta.1+some.metadata":                   {100, 100, 100, "beta.1", "some.metadata", Complete},
