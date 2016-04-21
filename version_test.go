@@ -2,6 +2,8 @@ package semv
 
 import (
 	"encoding/json"
+	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -216,6 +218,45 @@ func TestIncrements(t *testing.T) {
 	v2_0_0 := v1_1_1.IncrementMajor()
 	if v2_0_0.String() != "2.0.0" {
 		t.Errorf("expected increment major to 2.0.0; got %q", v1)
+	}
+}
+
+func TestMarshalYAML(t *testing.T) {
+	expected := "1.0.0-beta.12+abc-123"
+	v1 := MustParse(expected)
+	obj, err := v1.MarshalYAML()
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, isString := obj.(string)
+	if !isString {
+		t.Fatalf("Marshalled to a %T; want string", obj)
+	}
+	if actual != expected {
+		t.Fatalf("Marshalled %s as %s; want %s", v1, actual, expected)
+	}
+}
+
+func TestUnmarshalYAML(t *testing.T) {
+	expected := MustParse("1.0.0-beta.12+abc-123")
+	f := func(v interface{}) error {
+		sp := reflect.ValueOf(v)
+		if sp.Kind() != reflect.Ptr {
+			return fmt.Errorf("got %T; want a *string")
+		}
+		s := sp.Elem()
+		if s.Kind() != reflect.String {
+			return fmt.Errorf("got %T; want a *string")
+		}
+		s.Set(reflect.ValueOf(expected.String()))
+		return nil
+	}
+	actual := &Version{}
+	if err := actual.UnmarshalYAML(f); err != nil {
+		t.Fatal(err)
+	}
+	if *actual != expected {
+		t.Fatalf("%s marshalled to %s", expected, actual)
 	}
 }
 

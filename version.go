@@ -306,3 +306,18 @@ func (v Version) SetMeta(s string) Version {
 	v.Meta = s
 	return v
 }
+
+// MarshalYAML allows sensible YAML marshalling by gopkg.in/yaml.v2
+func (v Version) MarshalYAML() (interface{}, error) {
+	return v.String(), nil
+}
+
+// UnmarshalYAML allows sensible YAML unmarshalling by gopkg.in/yaml.v2
+func (v *Version) UnmarshalYAML(f func(interface{}) error) (err error) {
+	var s string
+	if err = f(&s); err != nil {
+		return
+	}
+	*v, err = Parse(s)
+	return
+}
