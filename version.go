@@ -7,7 +7,7 @@ import (
 )
 
 type (
-	// Version is a semver version
+	// Version is a semver version.
 	Version struct {
 		Major, Minor, Patch      int
 		Pre, Meta, DefaultFormat string
@@ -174,6 +174,8 @@ func (v Version) Format(format string) string {
 	return formatted
 }
 
+// SetFormat sets the default format string to use when calling String()
+// see Format for acceptable format strings.
 func (v Version) SetFormat(format string) {
 	v.DefaultFormat = format
 }
@@ -270,7 +272,10 @@ func (v *Version) ValueEquals(other *Version) bool {
 	return (*v).Equals(*other)
 }
 
-// Satisfies is a convenience function. v.Satisfies(r) == r.IsSatisfied(v)
+// Satisfies is a convenience function. For any version, range pair (v,r):
+//
+//     v.Satisfies(r) == r.IsSatisfied(v)
+//
 func (v Version) Satisfies(r Range) bool {
 	return r.SatisfiedBy(v)
 }
