@@ -90,16 +90,33 @@ If you want to validate that input is in exact semver 2.0.0 format, you should u
 
 ### Range Parsing
 
-Range parsing  using `ParseRange` and `MustParseRange` allows common range specifiers like `>`, `>=`, `<`, `<=`, as well as modern range shorcuts as used in npm and other tools: `^` and `~`.
+Range parsing  using `ParseRange` and `MustParseRange` allows common range specifiers like `>`, `>=`, `<`, `<=`, as well as modern range shortcuts as used in npm and other tools: `^` and `~`.
 
 Currently, only single-version ranges are supported, so the only way to parse a range with both an upper and a lower limit is by using the `^` and `~` characters.
 
 - `^1.2.3 == >=1.2.3 and <2.0.0`
 - `~1.2.3 == >=1.2.3 and <1.3.0`
 
+### VersionList
+
+The `VersionList` type is a slice of versions. It implements `sort.Interface` so you can order arbitrary lists of versions.
+
+You can find the greatest version in a `VersionList` satisfying a `Range` using the `GreatestSatisfying` method, e.g.:
+
+```go
+v, ok := MustParseList("1.0.0", "0.9.1", "1.2.0").GreatestSatisfying(MustParseRange("^1.0.0"))
+if !ok {
+	fmt.Println("No matching version found.")
+} else {
+	fmt.Println(v)
+}
+// Output:
+// 1.2.0
+```
+
 ### Version.String()
 
-Simply calling `.String()` on a version created using one of the `New(Version|MajorMinorPatch)` funcs will print the full version string, ommitting the optional prerelease and/or metadata sections depending on if they contain any data.
+Simply calling `.String()` on a version created using one of the `New(Version|MajorMinorPatch)` funcs will print the full version string, omitting the optional prerelease and/or metadata sections depending on if they contain any data.
 
 If a version is created by parsing a string, its original format is recorded with the version. In this case, calling `.String()` will print the version it its original format. E.g.:
 
