@@ -12,13 +12,13 @@ import (
 // version, e.g. Parse("1").Format("M.m.p") == "1.0.0".
 func Parse(s string) (Version, error) {
 	v, errs := parse(s)
-	// Skip nil, PrecedingZero, and VersionIncomplete errors in this
+	// Skip nil, LeadingZero, and VersionIncomplete errors in this
 	// permissive parse func.
 	for _, err := range errs {
 		if err == nil {
 			continue
 		}
-		if _, ok := err.(PrecedingZero); ok {
+		if _, ok := err.(LeadingZero); ok {
 			continue
 		}
 		if _, ok := err.(VersionIncomplete); ok {
@@ -224,7 +224,7 @@ func validateMMPFormat(s, name string) error {
 		return ZeroLengthNumeric{name}
 	}
 	if len(s) > 1 && s[0] == '0' {
-		return PrecedingZero{name, s}
+		return LeadingZero{name, s}
 	}
 	return nil
 }

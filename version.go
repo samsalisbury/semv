@@ -29,12 +29,12 @@ type (
 	ZeroLengthNumeric struct {
 		ZeroLengthPart string
 	}
-	// PrecedingZero is an error returned when one of the major, minor, or
+	// LeadingZero is an error returned when one of the major, minor, or
 	// patch parts contains a preceding zero. This error is only returned
 	// when using ParseExactSemver2_0_0, and this validation is ignored
 	// otherwise.
-	PrecedingZero struct {
-		PrecedingZeroPart, InputString string
+	LeadingZero struct {
+		LeadingZeroPart, InputString string
 	}
 	mode uint
 )
@@ -62,9 +62,9 @@ func (err ZeroLengthNumeric) Error() string {
 	return fmt.Sprintf("unexpected zero-length %s component", err.ZeroLengthPart)
 }
 
-func (err PrecedingZero) Error() string {
+func (err LeadingZero) Error() string {
 	return fmt.Sprintf("unexpected preceding zero in %s component: %q",
-		err.PrecedingZeroPart, err.InputString)
+		err.LeadingZeroPart, err.InputString)
 }
 
 const (
@@ -172,6 +172,10 @@ func (v Version) Format(format string) string {
 	formatted = strings.Replace(formatted, PreRaw, v.Pre, -1)
 	formatted = strings.Replace(formatted, MetaRaw, v.Meta, -1)
 	return formatted
+}
+
+func (v Version) SetFormat(format string) {
+	v.DefaultFormat = format
 }
 
 // Less returns true if the version it is invoked on is less than the version

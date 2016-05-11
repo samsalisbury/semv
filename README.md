@@ -85,7 +85,7 @@ Note that whilst permissive, parse will still return errors for the following co
 
 If you want to validate that input is in exact semver 2.0.0 format, you should use `ParseExactSemver2` instead, which returns these additional errors:
 - `VersionIncomplete` when either the minor or patch fields are missing
-- `PrecedingZero` when a major, minor, or patch contains an erroneous preceding
+- `LeadingZero` when a major, minor, or patch contains an erroneous preceding
   zero character.
 
 ### Range Parsing
