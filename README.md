@@ -74,12 +74,12 @@ Version string parsing using `Parse()` is permissive by default. All of the foll
 - `"1.2+abc"` parses as `{Major: 1, Minor: 2, Patch: 0, Pre: "", Meta: "abc"}`
 - `"1.2-beta+abc"` parses as `{Major: 1, Minor: 2, Patch: 0, Pre: "beta", Meta: "abc"}`
 
-Note that whilts permissive, parse will still return errors for the following conditions:
+Note that whilst permissive, parse will still return errors for the following conditions:
 
 - `UnexpectedCharacter` when encountering anything other than:
-  - `[0-9.]` in a major or minor field,
-  - `[0-9]-+`, in a patch field,
-  - `[0-9a-zA-Z-]` in a prerelease or meta field.
+  - `[0-9\.]` in a major or minor field,
+  - `[0-9\-]+`, in a patch field,
+  - `[0-9a-zA-Z\-]` in a prerelease or meta field.
 - `ZeroLengthNumeric` when encountering 2 dots together in the major, minor,
   patch fields.
 
@@ -103,12 +103,12 @@ Simply calling `.String()` on a version created using one of the `New(Version|Ma
 
 If a version is created by parsing a string, its original format is recorded with the version. In this case, calling `.String()` will print the version it its original format. E.g.:
 
-- `Parse("1").String() == "1"`
-- `Parse("1.0").String() == "1.0"`
-- `Parse("1.0.0").String() == "1.0.0"`
-- `Parse("1.0.0-beta").String() == "1.0.0-beta"`
-- `Parse("1.0.0-beta+abc").String() == "1.0.0-beta+abc"`
-- `Parse("1.0.0+abc").String() == "1.0.0+abc"`
+- `MustParse("1").String() == "1"`
+- `MustParse("1.0").String() == "1.0"`
+- `MustParse("1.0.0").String() == "1.0.0"`
+- `MustParse("1.0.0-beta").String() == "1.0.0-beta"`
+- `MustParse("1.0.0-beta+abc").String() == "1.0.0-beta+abc"`
+- `MustParse("1.0.0+abc").String() == "1.0.0+abc"`
 
 This feature is useful when dealing with partial versions, as used by many popular projects, e.g. [Go], [NPM], and others. You can always use `.Format()` to print an exact format.
 
@@ -119,11 +119,11 @@ This feature is useful when dealing with partial versions, as used by many popul
 
 If you want to print your version in a specific format, you can use `.Format()` with a format string, e.g.:
 
-- `Parse("1.2.3-beta.1+abc-def.2").Format("M") == "1"`
-- `Parse("1.2.3-beta.1+abc-def.2").Format("M.m") == "1.2"`
-- `Parse("1.2.3-beta.1+abc-def.2").Format("M.m.p") == "1.2.3"`
-- `Parse("1.2.3-beta.1+abc-def.2").Format("M.m.p-?") == "1.2.3-beta.1"`
-- `Parse("1.2.3-beta.1+abc-def.2").Format("M.m.p+?") == "1.2.3+abc-def.2"`
-- `Parse("1.2.3-beta.1+abc-def.2").Format("M.m.p-?+?") == "1.2.3-beta.1+abc-def.2"`
+- `MustParse("1.2.3-beta.1+abc-def.2").Format("M") == "1"`
+- `MustParse("1.2.3-beta.1+abc-def.2").Format("M.m") == "1.2"`
+- `MustParse("1.2.3-beta.1+abc-def.2").Format("M.m.p") == "1.2.3"`
+- `MustParse("1.2.3-beta.1+abc-def.2").Format("M.m.p-?") == "1.2.3-beta.1"`
+- `MustParse("1.2.3-beta.1+abc-def.2").Format("M.m.p+?") == "1.2.3+abc-def.2"`
+- `MustParse("1.2.3-beta.1+abc-def.2").Format("M.m.p-?+?") == "1.2.3-beta.1+abc-def.2"`
 
 
