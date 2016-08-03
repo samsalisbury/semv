@@ -330,3 +330,20 @@ func (v *Version) UnmarshalYAML(f func(interface{}) error) (err error) {
 	*v, err = Parse(s)
 	return
 }
+
+// MarshalJSON marshals this version to a JSON string.
+func (v Version) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + v.String() + `"`), nil
+}
+
+// UnmarshalJSON unmarshals from a JSON string.
+func (v *Version) UnmarshalJSON(b []byte) error {
+	s := string(b)
+	if !strings.HasPrefix(s, `"`) || !strings.HasSuffix(s, `"`) {
+		return fmt.Errorf("missing surrounding quotation marks")
+	}
+	vs := string(b[1 : len(b)-1])
+	var err error
+	*v, err = Parse(vs)
+	return err
+}

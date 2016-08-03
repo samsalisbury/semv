@@ -242,11 +242,11 @@ func TestUnmarshalYAML(t *testing.T) {
 	f := func(v interface{}) error {
 		sp := reflect.ValueOf(v)
 		if sp.Kind() != reflect.Ptr {
-			return fmt.Errorf("got %T; want a *string")
+			return fmt.Errorf("got %s; want *string", sp.Type())
 		}
 		s := sp.Elem()
 		if s.Kind() != reflect.String {
-			return fmt.Errorf("got %T; want a *string")
+			return fmt.Errorf("got %s; want a *string", sp.Type())
 		}
 		s.Set(reflect.ValueOf(expected.String()))
 		return nil
@@ -257,6 +257,32 @@ func TestUnmarshalYAML(t *testing.T) {
 	}
 	if *actual != expected {
 		t.Fatalf("%s marshalled to %s", expected, actual)
+	}
+}
+
+func TestMarshalJSON(t *testing.T) {
+	vs := "1.0.0-beta.12+abc-123"
+	expected := fmt.Sprintf(`"%s"`, vs)
+	j, err := json.Marshal(MustParse(vs))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := string(j)
+	if actual != expected {
+		t.Errorf("got %q; want %q", actual, expected)
+	}
+}
+
+func TestUnmarshalJSON(t *testing.T) {
+	vs := "1.0.0-beta.12+abc-123"
+	j := []byte(fmt.Sprintf(`"%s"`, vs))
+	actual := Version{}
+	if err := json.Unmarshal(j, &actual); err != nil {
+		t.Fatal(err)
+	}
+	expected := MustParse(vs)
+	if actual != expected {
+		t.Errorf("got %q; want %q", actual, expected)
 	}
 }
 
