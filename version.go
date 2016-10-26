@@ -274,7 +274,7 @@ func (v *Version) ValueEquals(other *Version) bool {
 
 // Satisfies is a convenience function. For any version, range pair (v,r):
 //
-//     v.Satisfies(r) == r.IsSatisfied(v)
+//     v.Satisfies(r) == r.SatisfiedBy(v)
 //
 func (v Version) Satisfies(r Range) bool {
 	return r.SatisfiedBy(v)
